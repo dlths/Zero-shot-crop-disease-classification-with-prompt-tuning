@@ -1,58 +1,60 @@
 # Zero-Shot Crop Disease Classification with Prompt Tuning & Alignment
 
-> 학습 데이터 없이 처음 보는 환경의 작물 질병을 분류하기 위해, CLIP 기반 비전-언어 모델에 **테스트 시점 프롬프트 튜닝과 분포 정렬**을 적용한 연구
+**English** | [한국어](README.ko.md)
 
-📄 **이소은**, 김찬호, 강병근. *프롬프트 정렬을 활용한 제로-샷 작물 질병 분류 방법*. 2024 한국방송·미디어공학회 추계학술대회 (제1저자)
+> Classifying crop diseases in unseen environments **without any training data**, by applying **test-time prompt tuning and distribution alignment** to a CLIP-based vision-language model.
+
+📄 **Soeun Lee**, Chanho Kim, Byeongkeun Kang. *Zero-Shot Crop Disease Classification Method Using Prompt Alignment*. KIBME Fall Conference 2024 (in Korean, first author)
 
 ![framework](assets/framework.png)
 
-## 핵심 요약
+## Highlights
 
-- 사전 학습된 CLIP을 그대로 쓰면 농업 데이터와의 분포 차이 때문에 Top-1 정확도가 **14.59%**에 그칩니다.
-- **TPT(테스트 시점 프롬프트 튜닝) + PromptAlign(분포 정렬)**을 MaPLe 멀티모달 프롬프트에 적용하고, 클래스 프롬프트를 보강해 **Top-1 44.13%, Top-5 83.00%**까지 끌어올렸습니다.
-- 질병 데이터로 **별도의 학습을 전혀 하지 않고** 추론 과정만으로 얻은 결과입니다.
+- Off-the-shelf CLIP reaches only **14.59%** Top-1 accuracy because agricultural images differ greatly from its pre-training data.
+- Applying **TPT (test-time prompt tuning) + PromptAlign (distribution alignment)** on MaPLe multi-modal prompts, together with enriched class prompts, raises accuracy to **44.13% Top-1 / 83.00% Top-5**.
+- All results are obtained **purely at inference time**, without training on any disease data.
 
-## 문제 정의
+## Motivation
 
-작물 질병 분류 모델은 대개 특정 데이터로 학습되기 때문에, 새로운 질병이나 다른 기후·토양 환경에서는 성능이 크게 떨어집니다. 모든 질병과 환경마다 데이터를 새로 모으고 학습하는 것은 비용이 큽니다. 그래서 기존 지식만으로 처음 보는 클래스를 분류하는 **제로-샷 학습**과, 테스트 데이터의 분포 변화에 실시간으로 적응하는 방법이 필요합니다.
+Crop disease classifiers are usually trained on specific datasets, so their accuracy drops sharply on new diseases or under different climate and soil conditions. Collecting and labeling data for every disease and environment is expensive. This calls for **zero-shot learning**, which classifies unseen classes from prior knowledge, and for methods that adapt to distribution shifts at test time.
 
-## 방법
+## Method
 
-1. **멀티모달 프롬프트 (MaPLe)** — CLIP ViT-B/16의 텍스트·이미지 인코더 양쪽에 학습 가능한 프롬프트 토큰을 넣어 두 모달리티를 함께 조정합니다.
-2. **테스트 시점 프롬프트 튜닝 (TPT)** — 테스트 이미지 1장으로 증강 뷰 64개를 만들고, 확신도가 높은 뷰들의 예측 엔트로피를 최소화하도록 프롬프트를 업데이트합니다.
-3. **프롬프트 정렬 (PromptAlign)** — 이미지 인코더 각 층의 토큰 임베딩 평균·분산을 소스 데이터 통계와 L1 손실로 맞춰, 데이터셋 간 분포 이동을 줄입니다.
-   최종 손실은 `L = L_entropy + β · L_align` (β = 100) 입니다.
-4. **클래스 프롬프트 보강**
-   - **"Normal" 클래스 확장**: 모든 작물의 정상 상태를 뜻하는 "Normal" 한 단어는 의미가 모호합니다. "Robust", "Energetic", "Alive" 등 관련 단어 23개를 추가하고 그 확률을 Normal 클래스에 합산합니다.
-   - **질병 클래스 분할**: "Cabbage Soft Rot"처럼 여러 단어로 된 질병명을 단어 단위로도 인코딩해 해당 클래스 확률에 합산합니다.
+1. **Multi-modal prompts (MaPLe)** — Learnable prompt tokens are inserted into both the text and image encoders of CLIP ViT-B/16 so that both modalities are adapted together.
+2. **Test-time prompt tuning (TPT)** — For each test image, 64 augmented views are generated, and the prompts are updated to minimize the prediction entropy of the most confident views.
+3. **Prompt alignment (PromptAlign)** — The mean and variance of token embeddings at each layer of the image encoder are aligned with pre-computed source statistics using an L1 loss, reducing the distribution shift between datasets.
+   The final loss is `L = L_entropy + β · L_align` (β = 100).
+4. **Class prompt enrichment**
+   - **Expanding "Normal"**: a single word "Normal" for every healthy crop is semantically vague. We add 23 related words (e.g., "Robust", "Energetic", "Alive") and sum their probabilities into the Normal class.
+   - **Splitting disease names**: multi-word disease names such as "Cabbage Soft Rot" are also encoded word by word, and their probabilities are merged into the corresponding class.
 
-## 실험
+## Experiments
 
-- **데이터셋**: [AI Hub 노지 작물 질병 진단 이미지](https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=147) — 작물 10종, 약 35만 장, 21개 클래스(정상 1 + 질병 20). 검증용 이미지만 사용
-- **설정**: CLIP ViT-B/16 기반 MaPLe(텍스트·이미지 각 2토큰, 3개 층), AdamW, learning rate 0.04
+- **Dataset**: [AI Hub Field Crop Disease Diagnosis Images](https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=147) — 10 crops, ~350k images, 21 classes (1 normal + 20 diseases). Only the validation split is used.
+- **Setup**: MaPLe on CLIP ViT-B/16 (2 prompt tokens per encoder, 3 layers), AdamW, learning rate 0.04
 
-## 결과
+## Results
 
-| 방법 | Acc-1 | Acc-5 |
+| Method | Acc-1 | Acc-5 |
 |---|---:|---:|
 | CLIP (zero-shot) | 14.59 | 38.25 |
-| + 프롬프트 튜닝 + 프롬프트 정렬 | 16.75 | 40.58 |
-| + "Normal" 관련 프롬프트 추가 생성 | 44.13 | 81.94 |
-| + 질병 클래스 분할 | **44.13** | **83.00** |
+| + Prompt tuning + Prompt alignment | 16.75 | 40.58 |
+| + Additional "Normal" prompts | 44.13 | 81.94 |
+| + Disease name splitting | **44.13** | **83.00** |
 
-- 일반 CLIP은 농업 이미지와 사전 학습 데이터의 분포 차이가 커서 정확도가 매우 낮았습니다.
-- 가장 큰 개선은 **"Normal" 클래스의 의미를 보강**했을 때 나왔습니다. 프롬프트 설계가 제로-샷 성능에 결정적이라는 점을 보여 줍니다.
+- Plain CLIP performs poorly due to the large gap between agricultural images and its pre-training data.
+- The biggest gain comes from **enriching the meaning of the "Normal" class**, showing that prompt design is critical for zero-shot performance.
 
-## 관련 연구
+## Related Work
 
-- 김찬호, **이소은**, 이태형, 강병근. *대조적 언어-이미지 사전 학습 모델을 활용한 비 학습 작물 질병 분류 방법*. 2023 한국방송·미디어공학회 추계학술대회 — 이 연구의 선행 연구로, "Normal" 프롬프트 확장 아이디어를 처음 제안했습니다.
-- 같은 데이터셋을 COCO 형식으로 변환한 도구: [convert-to-coco](https://github.com/dlths/conver_to_coco)
+- Chanho Kim, **Soeun Lee**, Taehyung Lee, Byeongkeun Kang. *Zero-Shot Crop Disease Classification Using Contrastive Language-Image Pre-Trained Model*. KIBME Fall Conference 2023 — the predecessor of this work, which first proposed the "Normal" prompt expansion.
+- A tool that converts the same dataset to COCO format: [convert-to-coco](https://github.com/dlths/conver_to_coco)
 
-## 기술 스택
+## Tech Stack
 
 Python · PyTorch · CLIP (ViT-B/16) · MaPLe · TPT · PromptAlign
 
-## 참고 문헌
+## References
 
 - Radford et al., *Learning Transferable Visual Models From Natural Language Supervision* (CLIP), ICML 2021
 - Khattak et al., *MaPLe: Multi-modal Prompt Learning*, CVPR 2023
