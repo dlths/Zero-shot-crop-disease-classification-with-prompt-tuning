@@ -48,7 +48,7 @@
 ## 관련 연구
 
 - 김찬호, **이소은**, 이태형, 강병근. *대조적 언어-이미지 사전 학습 모델을 활용한 비 학습 작물 질병 분류 방법*. 2023 한국방송·미디어공학회 추계학술대회 — 이 연구의 선행 연구로, "Normal" 프롬프트 확장 아이디어를 처음 제안했습니다.
-- 같은 데이터셋을 COCO 형식으로 변환한 도구: [convert-to-coco](https://github.com/dlths/conver_to_coco)
+- 같은 데이터셋을 COCO 형식으로 변환한 도구: [convert-to-coco](https://github.com/dlths/convert-to-coco)
 
 ## 기술 스택
 

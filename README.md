@@ -48,7 +48,7 @@ Crop disease classifiers are usually trained on specific datasets, so their accu
 ## Related Work
 
 - Chanho Kim, **Soeun Lee**, Taehyung Lee, Byeongkeun Kang. *Zero-Shot Crop Disease Classification Using Contrastive Language-Image Pre-Trained Model*. KIBME Fall Conference 2023 — the predecessor of this work, which first proposed the "Normal" prompt expansion.
-- A tool that converts the same dataset to COCO format: [convert-to-coco](https://github.com/dlths/conver_to_coco)
+- A tool that converts the same dataset to COCO format: [convert-to-coco](https://github.com/dlths/convert-to-coco)
 
 ## Tech Stack
 
